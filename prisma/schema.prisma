@@ -1,0 +1,49 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://neondb_owner:U8or4ntBJwFh@ep-wispy-waterfall-a5r65dt1.us-east-2.aws.neon.tech/neondb"
+}
+
+model Student {
+  id         Int          @id @default(autoincrement())
+  rollNo     Int
+  name       String
+  class      String      // e.g., "TY", "SY"
+  attendance Attendance[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Subject {
+  id         Int          @id @default(autoincrement())
+  name       String
+  class      String      // e.g., "TY", "SY"
+  type       String
+  attendance Attendance[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Attendance {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @db.Date
+  time      String
+  isPresent Boolean
+  student   Student  @relation(fields: [studentId], references: [id])
+  studentId Int
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  subjectId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, subjectId, date, time])
+}
