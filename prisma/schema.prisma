@@ -10,14 +10,37 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://neondb_owner:U8or4ntBJwFh@ep-wispy-waterfall-a5r65dt1.us-east-2.aws.neon.tech/neondb"
+  url      = "postgresql://neondb_owner:U8or4ntBJwFh@ep-wispy-waterfall-a5r65dt1-pooler.us-east-2.aws.neon.tech/neondb"
 }
+
+model HOD {
+  id       Int      @id @default(autoincrement())
+  username String   @unique
+  password String
+}
+
+model Class {
+  id         Int       @id @default(autoincrement())
+  name       String
+
+}
+
+model Teacher {
+  id       Int      @id @default(autoincrement())
+  name     String
+  username  String  @unique
+  password  String
+  class      String      // e.g., "TY", "SY"
+
+}
+
 
 model Student {
   id         Int          @id @default(autoincrement())
   rollNo     Int
   name       String
   class      String      // e.g., "TY", "SY"
+  batch      String      // e.g.,  "T1"
   attendance Attendance[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt

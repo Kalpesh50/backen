@@ -5,6 +5,8 @@ const ExcelJS = require('exceljs');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
 
+
+
 const prisma = new PrismaClient();
 
 exports.markAttendance = async (req, res) => {
@@ -227,10 +229,13 @@ exports.getSubjectsByClass = async (req, res) => {
 exports.getStudentsByClass = async (req, res) => {
   try {
     const { className } = req.params;
-    
+    const { batch } = req.query; // Get the batch from query parameters
+
+    // If a batch is provided, include it in the filter; otherwise, fetch all students for the class
     const students = await prisma.student.findMany({
       where: {
-        class: className
+        class: className,
+        ...(batch && { batch: batch }) // Only add batch filter if it's provided
       },
       orderBy: {
         rollNo: 'asc'
@@ -243,6 +248,7 @@ exports.getStudentsByClass = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch students' });
   }
 };
+
 
 exports.getAttendanceReport = async (req, res) => {
   try {
@@ -349,6 +355,71 @@ const transporter = nodemailer.createTransport({
     pass: 'qwbaojbzgucjkruh'
   }
 });
+
+
+
+
+exports.getAttendanceOfToday = async (req, res) => {
+  const { date } = req.query; // Get the date from the query parameters
+  const today = date || new Date().toISOString().split('T')[0]; // Default to today's date if not provided
+
+  try {
+    console.log(`Fetching attendance for date: ${today}`); // Log the date for debugging
+
+    // Fetch attendance data for the selected date, including the related student and subject
+    const attendanceData = await prisma.attendance.findMany({
+      where: {
+        date: {
+          equals: new Date(today), // Compare the date
+        },
+      },
+      include: {
+        student: true, // Include student details
+        subject: true, // Include subject details
+      },
+    });
+
+    if (attendanceData.length === 0) {
+      return res.status(404).json({ message: 'No attendance data found for the selected date' });
+    }
+
+    // Group by class and time, and also collect absent students' roll numbers
+    const groupedAttendance = attendanceData.reduce((acc, curr) => {
+      const className = curr.student.class; // Get class from student
+      const lectureTime = curr.time; // Get lecture time from attendance
+      const rollNo = curr.student.rollNo; // Get roll number of the student
+
+      // Initialize class and time if not present
+      if (!acc[className]) {
+        acc[className] = {};
+      }
+      if (!acc[className][lectureTime]) {
+        acc[className][lectureTime] = { present: 0, absent: 0, absentStudents: [] };
+      }
+
+      // Increment present or absent count based on attendance
+      if (curr.isPresent) {
+        acc[className][lectureTime].present += 1;
+      } else {
+        acc[className][lectureTime].absent += 1;
+        acc[className][lectureTime].absentStudents.push(rollNo); // Add absent student's roll number to the list
+      }
+
+      return acc;
+    }, {});
+
+    console.log(groupedAttendance); // Log grouped data for debugging
+    res.json(groupedAttendance);
+  } catch (error) {
+    console.error('Error fetching attendance data:', error); // Log the error
+    res.status(500).json({ error: 'Error fetching attendance data', details: error.message });
+  }
+};
+
+
+
+
+
 
 
 exports.getexcel = async (req, res) => {

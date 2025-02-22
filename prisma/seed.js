@@ -73,7 +73,7 @@ async function main() {
 
   for (const student of students) {
     await prisma.student.create({
-      data: student
+      data : student
     });
   }
 }

@@ -8,5 +8,6 @@ router.post('/mark', attendanceController.markAttendance);
 router.get('/report', attendanceController.getAttendanceReport);
 router.get('/first-lecture-absentees', attendanceController.getFirstLectureAbsentees);
 router.post('/export-excel', attendanceController.getexcel)
+router.get('/today' , attendanceController.getAttendanceOfToday);
 
 module.exports = router; 
